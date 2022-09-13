@@ -1,50 +1,41 @@
-import React from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import React, { useContext, useEffect, useState } from "react";
+import { AuthContext } from "../context/AuthContext";
+import { ChatContext } from "../context/ChatContext";
+import { db } from "../firebase";
 
 const Chats = () => {
+  const [chats, setChats] = useState([]);
+  const { currentUser } = useContext(AuthContext);
+  const { dispatch } = useContext(ChatContext);
+
+  useEffect(() => {
+    const getChats = () => {
+      const unsub = onSnapshot(doc(db, "userChats", currentUser.uid), (doc) => {
+        setChats(doc.data());
+      });
+      return () => {
+        unsub();
+      };
+    };
+
+    currentUser.uid && getChats();
+  }, [currentUser.uid]);
+
+  const handleSelect = (user) => {
+    dispatch({ type: "CHANGE_USER", payload:  user});
+  };
   return (
     <div className="chats">
-      {" "}
-      <div className="userChat">
-        <img
-          alt="das"
-          src="https://img.icons8.com/office/30/000000/circled-user-female-skin-type-5.png"
-        />
-        <div className="userChatInfo">
-          <span>JANE</span>
-          <p>hello</p>
+      {Object.entries(chats)?.map((chat) => (
+        <div className="userChat" key={chat[0]} onClick={()=>handleSelect(chat[1].userInfo)}>
+          <img alt="das" src={chat[1].userInfo.photoURL} />
+          <div className="userChatInfo">
+            <span>{chat[1].userInfo.displayName}</span>
+            <p>{chat[1].lastMessage?.text}</p>
+          </div>
         </div>
-      </div>
-      <div className="userChat">
-        <img
-          alt="dasd"
-          src="https://img.icons8.com/office/40/000000/why-us-male--v1.png"
-        />
-
-        <div className="userChatInfo">
-          <span>JANE</span>
-          <p>hello</p>
-        </div>
-      </div>
-      <div className="userChat">
-        <img
-          alt="das"
-          src="https://img.icons8.com/office/30/000000/circled-user-female-skin-type-5.png"
-        />
-        <div className="userChatInfo">
-          <span>JANE</span>
-          <p>hello</p>
-        </div>
-      </div>
-      <div className="userChat">
-        <img
-          alt="das"
-          src="https://img.icons8.com/office/30/000000/circled-user-female-skin-type-5.png"
-        />
-        <div className="userChatInfo">
-          <span>JANE</span>
-          <p>hello</p>
-        </div>
-      </div>
+      ))}
     </div>
   );
 };
